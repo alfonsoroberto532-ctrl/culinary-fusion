@@ -586,3 +586,5 @@ class _AgregarProductoScreenState extends State<AgregarProductoScreen> {
     );
   }
 }
+
+//a ver si puedo
