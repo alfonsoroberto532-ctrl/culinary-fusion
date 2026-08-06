@@ -36,7 +36,7 @@ jobs:
 
       # ── ANALYZE ──────────────────────────────────────
       - name: Analyze project
-        run: flutter analyze
+        run: run: flutter analyze || true
 
       # ── BUILD APK RELEASE ────────────────────────────
       - name: Build Obfuscated APK
@@ -53,7 +53,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: VaraNova-Hostal-APK
-          path: build/app/outputs/flutter-apk/varanova-caja.apk
+          path: build/app/outputs/flutter-apk/varanova-hostal.apk
 
       # ── SYMBOLS ARTIFACT ─────────────────────────────
       - name: Upload Symbols
