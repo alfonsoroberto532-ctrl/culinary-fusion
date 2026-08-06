@@ -1,5 +1,5 @@
 name: pos_caja
-description: "VaraNova-PosCaja"
+description: "VaraNova-Hostal"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -41,6 +41,6 @@ flutter:
     - assets/icon/appicon.png
 
 flutter_launcher_icons:
-  android: true
+  android: "launcher_icon"
   image_path: "assets/icon/appicon.png"
-  adaptive_icon_background: "#FFFFFF"
+  min_sdk_android: 21

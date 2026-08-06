@@ -46,13 +46,13 @@ jobs:
             --obfuscate \
             --split-debug-info=build/app/outputs/symbols
           mv build/app/outputs/flutter-apk/app-release.apk \
-             build/app/outputs/flutter-apk/varanova-caja.apk
+             build/app/outputs/flutter-apk/varanova-hostal.apk
 
       # ── APK ARTIFACT ─────────────────────────────────
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: VaraNova-Caja-APK
+          name: VaraNova-Hostal-APK
           path: build/app/outputs/flutter-apk/varanova-caja.apk
 
       # ── SYMBOLS ARTIFACT ─────────────────────────────
