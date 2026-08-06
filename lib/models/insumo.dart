@@ -1,5 +1,3 @@
-/// Cómo se consume un insumo: por cada huésped en la estadía completa,
-/// o por cada noche que dura la estadía (independiente del número de huéspedes).
 enum TipoConsumo { porHuespedEstadia, porNocheHabitacion }
 
 TipoConsumo tipoConsumoFromString(String value) {
@@ -12,19 +10,11 @@ TipoConsumo tipoConsumoFromString(String value) {
 class Insumo {
   final int? id;
   final String nombre;
-
-  /// Precio pagado por el lote/paquete comprado (ej. 3.50).
   final double costoCompra;
-
-  /// Cuántas unidades rinde ese lote (ej. 12 jabones por paquete).
-  /// costoUnitario = costoCompra / cantidadRinde.
   final double cantidadRinde;
-
   final TipoConsumo tipoConsumo;
-
-  /// Cuánto se consume por huésped (si tipoConsumo es porHuespedEstadia)
-  /// o por noche (si es porNocheHabitacion). Ej: 1 unidad, o 30 (gramos).
   final double cantidadConsumoEstandar;
+  final bool activo;
 
   const Insumo({
     this.id,
@@ -33,6 +23,7 @@ class Insumo {
     required this.cantidadRinde,
     required this.tipoConsumo,
     required this.cantidadConsumoEstandar,
+    this.activo = true,
   });
 
   double get costoUnitario => cantidadRinde > 0 ? costoCompra / cantidadRinde : 0;
@@ -44,6 +35,7 @@ class Insumo {
     double? cantidadRinde,
     TipoConsumo? tipoConsumo,
     double? cantidadConsumoEstandar,
+    bool? activo,
   }) {
     return Insumo(
       id: id ?? this.id,
@@ -52,6 +44,7 @@ class Insumo {
       cantidadRinde: cantidadRinde ?? this.cantidadRinde,
       tipoConsumo: tipoConsumo ?? this.tipoConsumo,
       cantidadConsumoEstandar: cantidadConsumoEstandar ?? this.cantidadConsumoEstandar,
+      activo: activo ?? this.activo,
     );
   }
 
@@ -63,6 +56,7 @@ class Insumo {
       'cantidad_rinde': cantidadRinde,
       'tipo_consumo': tipoConsumo.name,
       'cantidad_consumo_estandar': cantidadConsumoEstandar,
+      'activo': activo ? 1 : 0,
     };
   }
 
@@ -74,6 +68,7 @@ class Insumo {
       cantidadRinde: (map['cantidad_rinde'] as num).toDouble(),
       tipoConsumo: tipoConsumoFromString(map['tipo_consumo'] as String),
       cantidadConsumoEstandar: (map['cantidad_consumo_estandar'] as num).toDouble(),
+      activo: (map['activo'] as int? ?? 1) == 1,
     );
   }
 }

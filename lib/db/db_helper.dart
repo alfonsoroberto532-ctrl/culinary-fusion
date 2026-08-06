@@ -12,6 +12,7 @@ class DBHelper {
   static final DBHelper instance = DBHelper._internal();
 
   static Database? _db;
+  static const int _dbVersion = 1;
 
   Future<Database> get database async {
     _db ??= await _initDB();
@@ -23,8 +24,10 @@ class DBHelper {
     final path = join(dbPath, 'casa_renta.db');
     return openDatabase(
       path,
-      version: 1,
+      version: _dbVersion,
+      onConfigure: (db) async => db.execute('PRAGMA foreign_keys = ON'),
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -34,7 +37,8 @@ class DBHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT NOT NULL,
         capacidad_maxima INTEGER NOT NULL,
-        precio_base_noche REAL NOT NULL
+        precio_base_noche REAL NOT NULL,
+        activo INTEGER NOT NULL DEFAULT 1
       )
     ''');
 
@@ -45,7 +49,8 @@ class DBHelper {
         costo_compra REAL NOT NULL,
         cantidad_rinde REAL NOT NULL,
         tipo_consumo TEXT NOT NULL,
-        cantidad_consumo_estandar REAL NOT NULL
+        cantidad_consumo_estandar REAL NOT NULL,
+        activo INTEGER NOT NULL DEFAULT 1
       )
     ''');
 
@@ -63,7 +68,8 @@ class DBHelper {
       CREATE TABLE costos_fijos_mensuales (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT NOT NULL,
-        monto_mensual REAL NOT NULL
+        monto_mensual REAL NOT NULL,
+        activo INTEGER NOT NULL DEFAULT 1
       )
     ''');
 
@@ -77,10 +83,16 @@ class DBHelper {
         nacionalidad TEXT NOT NULL,
         precio_cobrado REAL NOT NULL,
         moneda_cobro TEXT NOT NULL,
+        tasa_cambio_usada REAL,
+        estado_pago TEXT NOT NULL DEFAULT 'pendiente',
+        estado_estadia TEXT NOT NULL DEFAULT 'activa',
         notas TEXT,
-        FOREIGN KEY (habitacion_id) REFERENCES habitaciones (id)
+        FOREIGN KEY (habitacion_id) REFERENCES habitaciones (id) ON DELETE CASCADE
       )
     ''');
+
+    await db.execute('CREATE INDEX idx_estadias_habitacion ON estadias (habitacion_id)');
+    await db.execute('CREATE INDEX idx_estadias_fecha_entrada ON estadias (fecha_entrada)');
 
     await db.execute('''
       CREATE TABLE configuracion (
@@ -91,8 +103,12 @@ class DBHelper {
       )
     ''');
 
-    final config = Configuracion.porDefecto();
-    await db.insert('configuracion', config.toMap());
+    await db.insert('configuracion', Configuracion.porDefecto().toMap());
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    // Reservado para futuras migraciones, ej.:
+    // if (oldVersion < 2) { await db.execute('ALTER TABLE estadias ADD COLUMN ...'); }
   }
 
   // ── Habitaciones ────────────────────────────────────────────────────────
@@ -101,9 +117,13 @@ class DBHelper {
     return db.insert('habitaciones', h.toMap()..remove('id'));
   }
 
-  Future<List<Habitacion>> obtenerHabitaciones() async {
+  Future<List<Habitacion>> obtenerHabitaciones({bool soloActivas = true}) async {
     final db = await database;
-    final rows = await db.query('habitaciones', orderBy: 'nombre ASC');
+    final rows = await db.query(
+      'habitaciones',
+      where: soloActivas ? 'activo = 1' : null,
+      orderBy: 'nombre ASC',
+    );
     return rows.map((r) => Habitacion.fromMap(r)).toList();
   }
 
@@ -112,9 +132,14 @@ class DBHelper {
     return db.update('habitaciones', h.toMap(), where: 'id = ?', whereArgs: [h.id]);
   }
 
-  Future<int> eliminarHabitacion(int id) async {
+  Future<int> desactivarHabitacion(int id) async {
     final db = await database;
-    return db.delete('habitaciones', where: 'id = ?', whereArgs: [id]);
+    return db.update('habitaciones', {'activo': 0}, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<int> reactivarHabitacion(int id) async {
+    final db = await database;
+    return db.update('habitaciones', {'activo': 1}, where: 'id = ?', whereArgs: [id]);
   }
 
   // ── Insumos ─────────────────────────────────────────────────────────────
@@ -123,14 +148,16 @@ class DBHelper {
     return db.insert('insumos', i.toMap()..remove('id'));
   }
 
-  Future<List<Insumo>> obtenerInsumos() async {
+  Future<List<Insumo>> obtenerInsumos({bool soloActivos = true}) async {
     final db = await database;
-    final rows = await db.query('insumos', orderBy: 'nombre ASC');
+    final rows = await db.query(
+      'insumos',
+      where: soloActivos ? 'activo = 1' : null,
+      orderBy: 'nombre ASC',
+    );
     return rows.map((r) => Insumo.fromMap(r)).toList();
   }
 
-  /// Actualiza un insumo. Si el costo de compra cambió respecto al valor
-  /// guardado, primero deja un registro en el historial de precios.
   Future<int> actualizarInsumo(Insumo nuevo) async {
     final db = await database;
     final actualRows = await db.query('insumos', where: 'id = ?', whereArgs: [nuevo.id]);
@@ -150,9 +177,14 @@ class DBHelper {
     return db.update('insumos', nuevo.toMap(), where: 'id = ?', whereArgs: [nuevo.id]);
   }
 
-  Future<int> eliminarInsumo(int id) async {
+  Future<int> desactivarInsumo(int id) async {
     final db = await database;
-    return db.delete('insumos', where: 'id = ?', whereArgs: [id]);
+    return db.update('insumos', {'activo': 0}, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<int> reactivarInsumo(int id) async {
+    final db = await database;
+    return db.update('insumos', {'activo': 1}, where: 'id = ?', whereArgs: [id]);
   }
 
   Future<List<HistorialPrecioInsumo>> obtenerHistorialPrecios(int insumoId) async {
@@ -172,9 +204,13 @@ class DBHelper {
     return db.insert('costos_fijos_mensuales', c.toMap()..remove('id'));
   }
 
-  Future<List<CostoFijo>> obtenerCostosFijos() async {
+  Future<List<CostoFijo>> obtenerCostosFijos({bool soloActivos = true}) async {
     final db = await database;
-    final rows = await db.query('costos_fijos_mensuales', orderBy: 'nombre ASC');
+    final rows = await db.query(
+      'costos_fijos_mensuales',
+      where: soloActivos ? 'activo = 1' : null,
+      orderBy: 'nombre ASC',
+    );
     return rows.map((r) => CostoFijo.fromMap(r)).toList();
   }
 
@@ -183,9 +219,14 @@ class DBHelper {
     return db.update('costos_fijos_mensuales', c.toMap(), where: 'id = ?', whereArgs: [c.id]);
   }
 
-  Future<int> eliminarCostoFijo(int id) async {
+  Future<int> desactivarCostoFijo(int id) async {
     final db = await database;
-    return db.delete('costos_fijos_mensuales', where: 'id = ?', whereArgs: [id]);
+    return db.update('costos_fijos_mensuales', {'activo': 0}, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<int> reactivarCostoFijo(int id) async {
+    final db = await database;
+    return db.update('costos_fijos_mensuales', {'activo': 1}, where: 'id = ?', whereArgs: [id]);
   }
 
   // ── Estadías ────────────────────────────────────────────────────────────
@@ -220,6 +261,32 @@ class DBHelper {
     return db.delete('estadias', where: 'id = ?', whereArgs: [id]);
   }
 
+  /// true si otra estadía no cancelada se solapa con el rango dado en la
+  /// misma habitación. Excluye [excluirEstadiaId] (útil al editar).
+  Future<bool> existeSolapamiento({
+    required int habitacionId,
+    required DateTime entrada,
+    required DateTime salida,
+    int? excluirEstadiaId,
+  }) async {
+    final db = await database;
+    final where = StringBuffer(
+      'habitacion_id = ? AND estado_estadia != ? AND fecha_entrada < ? AND fecha_salida > ?',
+    );
+    final args = <Object?>[
+      habitacionId,
+      EstadoEstadia.cancelada.name,
+      salida.toIso8601String(),
+      entrada.toIso8601String(),
+    ];
+    if (excluirEstadiaId != null) {
+      where.write(' AND id != ?');
+      args.add(excluirEstadiaId);
+    }
+    final rows = await db.query('estadias', where: where.toString(), whereArgs: args);
+    return rows.isNotEmpty;
+  }
+
   // ── Configuración ───────────────────────────────────────────────────────
   Future<Configuracion> obtenerConfiguracion() async {
     final db = await database;
@@ -230,10 +297,8 @@ class DBHelper {
 
   Future<void> guardarConfiguracion(Configuracion config) async {
     final db = await database;
-    await db.insert(
-      'configuracion',
-      config.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    final map = config.toMap();
+    map['id'] = 1;
+    await db.insert('configuracion', map, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 }
