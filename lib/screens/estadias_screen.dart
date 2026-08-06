@@ -205,7 +205,7 @@ class _FormularioEstadiaState extends State<_FormularioEstadia> {
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<int>(
-                value: _habitacionId,
+                initialValue: _habitacionId,
                 decoration: const InputDecoration(labelText: 'Habitación'),
                 items: [for (final h in habitaciones) DropdownMenuItem(value: h.id, child: Text(h.nombre))],
                 onChanged: (v) => setState(() => _habitacionId = v),
@@ -237,7 +237,7 @@ class _FormularioEstadiaState extends State<_FormularioEstadia> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<Nacionalidad>(
-                value: _nacionalidad,
+                initialValue: _nacionalidad,
                 decoration: const InputDecoration(labelText: 'Nacionalidad'),
                 items: const [
                   DropdownMenuItem(value: Nacionalidad.nacional, child: Text('Nacional')),
@@ -260,7 +260,7 @@ class _FormularioEstadiaState extends State<_FormularioEstadia> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: DropdownButtonFormField<Moneda>(
-                      value: _moneda,
+                      initialValue: _moneda,
                       decoration: const InputDecoration(labelText: 'Moneda'),
                       items: const [
                         DropdownMenuItem(value: Moneda.cup, child: Text('CUP')),
@@ -274,14 +274,14 @@ class _FormularioEstadiaState extends State<_FormularioEstadia> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<EstadoPago>(
-                value: _estadoPago,
+                initialValue: _estadoPago,
                 decoration: const InputDecoration(labelText: 'Estado de pago'),
                 items: EstadoPago.values.map((e) => DropdownMenuItem(value: e, child: Text(e.etiqueta))).toList(),
                 onChanged: (v) => setState(() => _estadoPago = v!),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<EstadoEstadia>(
-                value: _estadoEstadia,
+                initialValue: _estadoEstadia,
                 decoration: const InputDecoration(labelText: 'Estado de la estadía'),
                 items: EstadoEstadia.values.map((e) => DropdownMenuItem(value: e, child: Text(e.etiqueta))).toList(),
                 onChanged: (v) => setState(() => _estadoEstadia = v!),

@@ -64,7 +64,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      value: _monedaBase,
+                      initialValue: _monedaBase,
                       decoration: const InputDecoration(labelText: 'Moneda base para reportes'),
                       items: const [
                         DropdownMenuItem(value: 'CUP', child: Text('CUP')),
@@ -90,11 +90,11 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                         monedaBase: _monedaBase,
                       );
                       await context.read<ConfiguracionProvider>().guardar(nueva);
-                      if (mounted) {
-                        setState(() => _guardando = false);
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(const SnackBar(content: Text('Configuración guardada.')));
-                      }
+                      if (!context.mounted) return;
+                      setState(() => _guardando = false);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Configuración guardada.')),
+                      );
                     },
               child: _guardando
                   ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))

@@ -133,7 +133,7 @@ class _FormularioInsumoState extends State<_FormularioInsumo> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<TipoConsumo>(
-                value: _tipoConsumo,
+                initialValue: _tipoConsumo,
                 decoration: const InputDecoration(labelText: 'Se consume'),
                 items: const [
                   DropdownMenuItem(value: TipoConsumo.porHuespedEstadia, child: Text('Por huésped (toda la estadía)')),
