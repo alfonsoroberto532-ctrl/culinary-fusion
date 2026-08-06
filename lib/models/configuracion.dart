@@ -1,7 +1,16 @@
+/// Representa la configuración global de la aplicación.
+///
+/// La configuración se guarda en la base de datos en una tabla especial
+/// de llave-valor, donde cada fila es un parámetro de configuración.
 class Configuracion {
+  /// Tasa de cambio de USD a CUP.
   final double tasaCambioUsdACup;
+
+  /// Tasa de cambio de EUR a CUP.
   final double tasaCambioEurACup;
-  final String monedaBase; // Por ahora siempre 'CUP', pero queda abierto a futuro.
+
+  /// Moneda base para mostrar los reportes de ganancias.
+  final String monedaBase;
 
   const Configuracion({
     required this.tasaCambioUsdACup,
@@ -9,21 +18,8 @@ class Configuracion {
     this.monedaBase = 'CUP',
   });
 
-  Configuracion copyWith({
-    double? tasaCambioUsdACup,
-    double? tasaCambioEurACup,
-    String? monedaBase,
-  }) {
-    return Configuracion(
-      tasaCambioUsdACup: tasaCambioUsdACup ?? this.tasaCambioUsdACup,
-      tasaCambioEurACup: tasaCambioEurACup ?? this.tasaCambioEurACup,
-      monedaBase: monedaBase ?? this.monedaBase,
-    );
-  }
-
   Map<String, dynamic> toMap() {
     return {
-      'id': 1, // Fila única de configuración.
       'tasa_cambio_usd_a_cup': tasaCambioUsdACup,
       'tasa_cambio_eur_a_cup': tasaCambioEurACup,
       'moneda_base': monedaBase,
@@ -44,4 +40,3 @@ class Configuracion {
     return const Configuracion(tasaCambioUsdACup: 380, tasaCambioEurACup: 400);
   }
 }
-hjgsdjagdajgdjagdjasdgja
