@@ -9,12 +9,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-java@v1
+    - name: Workflow Triggered
+      run: echo "Workflow has been triggered!"
+
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Java
+      uses: actions/setup-java@v1
       with:
         java-version: '12.x'
-    - uses: subosito/flutter-action@v1
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v1
       with:
-        flutter-version: '3.3.0' # You can change this to your desired version
-    - run: flutter pub get
-    - run: flutter build apk
+        flutter-version: '3.3.0'
+
+    - name: Get dependencies
+      run: flutter pub get
+
+    - name: Build APK
+      run: flutter build apk
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v2
+      with:
+        name: app-release
+        path: build/app/outputs/flutter-apk/app-release.apk
