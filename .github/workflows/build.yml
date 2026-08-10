@@ -2,7 +2,7 @@ name: Build & Obfuscate
 
 on:
   push:
-    branches: [ main ] [origin]
+    branches: main
   workflow_dispatch:
 
 jobs:
