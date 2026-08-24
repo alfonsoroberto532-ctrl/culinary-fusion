@@ -114,7 +114,7 @@ class RestaurantScreen extends StatelessWidget {
                 else
                   Switch(
                     value: d.placed,
-                    activeColor: AppColors.secondary,
+                    activeThumbColor: AppColors.secondary,
                     onChanged: (_) => gameState.togglePlaceDecoration(d.id),
                   ),
               ],
