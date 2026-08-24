@@ -1,7 +1,6 @@
-# Build Android APK for Culinary Fusion
-# - Produces APK(s) under build/app/outputs/flutter-apk/
-# - Uploads APK(s) as artifact and uploads native symbols if present
-# - Uses actions/setup-java@v5 and subosito/flutter-action@v2
+# Build Android APK for Culinary Fusion (generates APK and uploads artifacts)
+# - No signing (unsigned APK) so no secrets required
+# - Uses subosito/flutter-action@v2 with channel input to avoid the "Unable to determine Flutter version" error
 name: Build Android APK
 
 on:
@@ -15,10 +14,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      # Asegúrate de configurar estas secrets si vas a firmar el APK para Play Store:
-      # KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD
-      # Si no las tienes, el APK será unsigned (útil para pruebas).
-      # Example use is commented later in the signing step.
       FLUTTER_CHANNEL: stable
 
     steps:
@@ -48,7 +43,8 @@ jobs:
       - name: Install Flutter SDK
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: stable
+          channel: stable
+          cache: true
 
       - name: Flutter --version
         run: flutter --version
@@ -56,29 +52,15 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # Optional: restore keystore from a secret if you want to produce a signed release APK.
-      # Uncomment and configure secrets if you want signing.
-      #
-      # - name: Restore keystore (optional, for signed APK)
-      #   if: secrets.KEYSTORE_BASE64 != ''
-      #   run: |
-      #     echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload.keystore
-      #     mkdir -p ~/.android
-      #     # configure gradle properties that the android/signing config in your app reads
-      #     echo "RELEASE_STORE_FILE=android/app/upload.keystore" >> $GITHUB_ENV
-      #     echo "RELEASE_STORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
-      #     echo "RELEASE_KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> $GITHUB_ENV
-      #     echo "RELEASE_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> $GITHUB_ENV
-
-      - name: Accept Android SDK licenses (safe no-op if SDK already accepts)
+      - name: Accept Android SDK licenses
+        # subosito/flutter-action installs Android SDK; accepting licenses avoids interactive prompt
         run: |
           yes | sdkmanager --licenses || true
 
       - name: Build APK (release)
         run: |
-          # Clean to avoid stale artifacts
           flutter clean
-          # Build release APK. This produces build/app/outputs/flutter-apk/app-release.apk (or app-arm64-v8a-release.apk if split-per-abi used)
+          # Build a single release APK (unsigned). If you want AAB, replace with `flutter build appbundle --release`.
           flutter build apk --release
 
       - name: Show build output (diagnostic)
