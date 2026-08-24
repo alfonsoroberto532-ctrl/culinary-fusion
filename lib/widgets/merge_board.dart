@@ -24,36 +24,53 @@ class MergeBoard extends StatelessWidget {
             margin: const EdgeInsets.fromLTRB(8, 4, 8, 0),
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: const Color(0xFFFBF3E7),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: const Color(0xFFF0E1C4)),
             ),
-            child: GridView.builder(
-              itemCount: kBoardSize,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: kBoardColumns,
-              ),
-              itemBuilder: (context, index) {
-                final item = gameState.board[index];
-                final selected = item != null && gameState.cookingSelection.contains(item.uid);
-                return MergeTile(
-                  index: index,
-                  item: item,
-                  selected: selected,
-                  justMerged: gameState.lastMergeCellIndex == index,
-                  onBurstComplete: gameState.clearMergeEvent,
-                  onDropped: (from, to) => gameState.moveOrMerge(from, to),
-                  onTap: (i) {
-                    final tapped = gameState.board[i];
-                    if (tapped == null) return;
-                    if (selected) {
-                      gameState.removeFromCookingSelection(tapped.uid);
-                    } else {
-                      gameState.addToCookingSelection(i);
-                    }
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              children: [
+                // Escena ilustrada de fondo (cocina/terraza). Coloca el
+                // PNG en assets/images/backgrounds/board_bg.png (y
+                // declara la carpeta en pubspec.yaml). Si falta, cae al
+                // color plano anterior sin romper la pantalla.
+                Positioned.fill(
+                  child: Image.asset(
+                    'assets/images/backgrounds/board_bg.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: const Color(0xFFFBF3E7),
+                    ),
+                  ),
+                ),
+                GridView.builder(
+                  itemCount: kBoardSize,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: kBoardColumns,
+                  ),
+                  itemBuilder: (context, index) {
+                    final item = gameState.board[index];
+                    final selected = item != null && gameState.cookingSelection.contains(item.uid);
+                    return MergeTile(
+                      index: index,
+                      item: item,
+                      selected: selected,
+                      justMerged: gameState.lastMergeCellIndex == index,
+                      onBurstComplete: gameState.clearMergeEvent,
+                      onDropped: (from, to) => gameState.moveOrMerge(from, to),
+                      onTap: (i) {
+                        final tapped = gameState.board[i];
+                        if (tapped == null) return;
+                        if (selected) {
+                          gameState.removeFromCookingSelection(tapped.uid);
+                        } else {
+                          gameState.addToCookingSelection(i);
+                        }
+                      },
+                    );
                   },
-                );
-              },
+                ),
+              ],
             ),
           ),
         ),

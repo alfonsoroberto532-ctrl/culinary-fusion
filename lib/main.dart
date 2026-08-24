@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'models/game_state.dart';
-import 'screens/home_screen.dart';
+import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -20,17 +20,8 @@ class CulinaryFusionApp extends StatelessWidget {
         title: 'Culinary Fusion',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
-        home: const AppRoot(),
+        home: const SplashScreen(),
       ),
     );
-  }
-}
-
-class AppRoot extends StatelessWidget {
-  const AppRoot({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const HomeScreen();
   }
 }

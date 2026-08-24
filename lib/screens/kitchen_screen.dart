@@ -5,6 +5,8 @@ import '../data/customers_data.dart';
 import '../models/game_state.dart';
 import '../theme/app_theme.dart';
 import '../theme/game_visuals.dart';
+import '../widgets/flying_reward.dart';
+import '../widgets/game_hud.dart';
 import '../widgets/merge_board.dart';
 
 class KitchenScreen extends StatelessWidget {
@@ -16,7 +18,8 @@ class KitchenScreen extends StatelessWidget {
 
     return Column(
       children: [
-        if (gameState.activeOrders.isNotEmpty) _OrdersStrip(gameState: gameState),
+        if (gameState.activeOrders.isNotEmpty)
+          _OrdersStrip(gameState: gameState),
         const Expanded(child: MergeBoard(showOrders: true)),
       ],
     );
@@ -45,7 +48,9 @@ class _OrdersStrip extends StatelessWidget {
             decoration: softCardDecoration(
               radius: 16,
               color: ready ? const Color(0xFFE9FBF1) : AppColors.surface,
-              borderColor: ready ? AppColors.success.withValues(alpha: 0.4) : const Color(0xFFF0E1C4),
+              borderColor: ready
+                  ? AppColors.success.withValues(alpha: 0.4)
+                  : const Color(0xFFF0E1C4),
             ),
             child: Row(
               children: [
@@ -53,10 +58,14 @@ class _OrdersStrip extends StatelessWidget {
                   width: 34,
                   height: 34,
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                      color: AppColors.surfaceAlt, shape: BoxShape.circle),
                   child: customer == null
                       ? const Text('🙂', style: TextStyle(fontSize: 18))
-                      : GameVisual(assetPath: customer.imagePath, emoji: customer.emoji, size: 22),
+                      : GameVisual(
+                          assetPath: customer.imagePath,
+                          emoji: customer.emoji,
+                          size: 22),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -66,29 +75,58 @@ class _OrdersStrip extends StatelessWidget {
                     children: [
                       Text(
                         recipe?.name ?? '???',
-                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                            fontSize: 12.5, fontWeight: FontWeight.w700),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Row(
                         children: [
-                          const Icon(Icons.savings_rounded, size: 12, color: AppColors.goldDark),
+                          const Icon(Icons.savings_rounded,
+                              size: 12, color: AppColors.goldDark),
                           const SizedBox(width: 2),
-                          Text('${order.rewardCoins}', style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted)),
+                          Text('${order.rewardCoins}',
+                              style: const TextStyle(
+                                  fontSize: 10.5, color: AppColors.textMuted)),
                         ],
                       ),
                       const SizedBox(height: 4),
                       SizedBox(
                         height: 28,
                         width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: ready ? AppColors.success : const Color(0xFFE0D6C4),
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
-                            visualDensity: VisualDensity.compact,
+                        child: Builder(
+                          builder: (buttonContext) => ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: ready
+                                  ? AppColors.success
+                                  : const Color(0xFFE0D6C4),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 6),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            onPressed: ready
+                                ? () {
+                                    final box = buttonContext.findRenderObject()
+                                        as RenderBox?;
+                                    final origin = box != null
+                                        ? box.localToGlobal(
+                                            box.size.center(Offset.zero))
+                                        : Offset.zero;
+                                    flyCoinsToHud(
+                                      buttonContext,
+                                      startGlobalPosition: origin,
+                                      hudCoinKey: GameHud.coinsKey,
+                                      coinCount: (order.rewardCoins / 8)
+                                          .clamp(3, 10)
+                                          .round(),
+                                      onLanded: () =>
+                                          gameState.deliverOrder(order.id),
+                                    );
+                                  }
+                                : null,
+                            child: const Text('Entregar',
+                                style: TextStyle(fontSize: 11)),
                           ),
-                          onPressed: ready ? () => gameState.deliverOrder(order.id) : null,
-                          child: const Text('Entregar', style: TextStyle(fontSize: 11)),
                         ),
                       ),
                     ],

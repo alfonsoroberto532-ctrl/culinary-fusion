@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../models/game_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/dialogue_overlay.dart';
+import '../widgets/game_hud.dart';
+import '../widgets/game_overlay_modal.dart';
 import 'free_cook_screen.dart';
 import 'gastronomic_tree_screen.dart';
 import 'kitchen_screen.dart';
@@ -10,103 +13,68 @@ import 'missions_screen.dart';
 import 'recipe_book_screen.dart';
 import 'restaurant_screen.dart';
 
-class HomeScreen extends StatefulWidget {
+/// Pantalla principal como lienzo único de juego: la Cocina (tablero de
+/// merge) siempre está de fondo. Recetario, Restaurante/Tienda, Árbol
+/// gastronómico y Misiones se abren como overlays flotantes encima del
+/// mismo tablero, nunca como rutas hermanas con su propio tab.
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  int _tabIndex = 0;
-
-  final _screens = const [
-    KitchenScreen(),
-    RecipeBookScreen(),
-    RestaurantScreen(),
-    GastronomicTreeScreen(),
-    MissionsScreen(),
-  ];
+  void _openOverlay(BuildContext context, {required String title, required IconData icon, required Widget child}) {
+    showGameOverlay(context, title: title, icon: icon, child: child);
+  }
 
   @override
   Widget build(BuildContext context) {
     final gameState = context.watch<GameState>();
-
-    // Muestra el popup de descubrimiento/logro más reciente, si lo hay.
-    if (gameState.lastPopupTitle != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        final title = gameState.lastPopupTitle;
-        final subtitle = gameState.lastPopupSubtitle;
-        gameState.clearPopup();
-        if (title == null) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            padding: EdgeInsets.zero,
-            duration: const Duration(seconds: 3),
-            content: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: gradientCardDecoration(AppColors.heroGradient, radius: 16),
-              child: Row(
-                children: [
-                  Container(
-                    width: 34,
-                    height: 34,
-                    alignment: Alignment.center,
-                    decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle),
-                    child: const Icon(Icons.auto_awesome, color: AppColors.gold, size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                        if (subtitle != null)
-                          Text(subtitle, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      });
-    }
+    final showDialogue = gameState.lastPopupTitle != null;
 
     return Scaffold(
-      appBar: AppBar(
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: AppColors.heroGradient,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        title: Row(
-          children: [
-            _StatChip(icon: Icons.star_rounded, label: 'Nv. ${gameState.player.level}', color: AppColors.gold),
-            const SizedBox(width: 8),
-            _StatChip(icon: Icons.savings_rounded, label: '${gameState.player.coins}', color: Colors.white),
-          ],
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: TextButton.icon(
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.white24,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          // Lienzo base: HUD fijo arriba + tablero de cocina siempre visible.
+          Column(
+            children: [
+              GameHud(
+                level: gameState.player.level,
+                levelProgress: gameState.player.xp / gameState.player.xpToNextLevel,
+                coins: gameState.player.coins,
+                onShopTap: () => _openOverlay(
+                  context,
+                  title: 'Restaurante',
+                  icon: Icons.storefront_rounded,
+                  child: const RestaurantScreen(),
+                ),
               ),
-              onPressed: () {
+              const Expanded(child: KitchenScreen()),
+            ],
+          ),
+
+          // Menú rápido flotante: reemplaza el NavigationBar inferior.
+          Positioned(
+            right: 12,
+            bottom: 16,
+            child: _QuickMenu(
+              onRecipes: () => _openOverlay(
+                context,
+                title: 'Recetario',
+                icon: Icons.menu_book_rounded,
+                child: const RecipeBookScreen(),
+              ),
+              onTree: () => _openOverlay(
+                context,
+                title: 'Árbol gastronómico',
+                icon: Icons.account_tree_rounded,
+                child: const GastronomicTreeScreen(),
+              ),
+              onMissions: () => _openOverlay(
+                context,
+                title: 'Misiones',
+                icon: Icons.flag_rounded,
+                child: const MissionsScreen(),
+              ),
+              onFreeCook: () {
                 gameState.toggleFreeCook();
                 if (gameState.freeCookMode) {
                   Navigator.of(context).push(MaterialPageRoute(
@@ -114,49 +82,79 @@ class _HomeScreenState extends State<HomeScreen> {
                   ));
                 }
               },
-              icon: const Icon(Icons.spa, color: Colors.white, size: 18),
-              label: const Text('Free Cook', style: TextStyle(color: Colors.white)),
             ),
           ),
-        ],
-      ),
-      body: IndexedStack(index: _tabIndex, children: _screens),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tabIndex,
-        onDestinationSelected: (i) => setState(() => _tabIndex = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.kitchen_rounded), label: 'Cocina'),
-          NavigationDestination(icon: Icon(Icons.menu_book_rounded), label: 'Recetas'),
-          NavigationDestination(icon: Icon(Icons.storefront_rounded), label: 'Restaurante'),
-          NavigationDestination(icon: Icon(Icons.account_tree_rounded), label: 'Árbol'),
-          NavigationDestination(icon: Icon(Icons.flag_rounded), label: 'Misiones'),
+
+          // Diálogo de personaje: descubrimientos y logros, superpuesto
+          // al tablero en vez de un SnackBar genérico.
+          if (showDialogue)
+            DialogueOverlay(
+              emoji: '✨',
+              name: gameState.lastPopupTitle ?? '',
+              text: gameState.lastPopupSubtitle ?? '',
+              onDismiss: gameState.clearPopup,
+            ),
         ],
       ),
     );
   }
 }
 
-class _StatChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  const _StatChip({required this.icon, required this.label, this.color = Colors.white});
+/// Columna de botones circulares flotantes para abrir los overlays de
+/// Recetario, Árbol y Misiones, más el acceso a Free Cook.
+class _QuickMenu extends StatelessWidget {
+  final VoidCallback onRecipes;
+  final VoidCallback onTree;
+  final VoidCallback onMissions;
+  final VoidCallback onFreeCook;
+
+  const _QuickMenu({
+    required this.onRecipes,
+    required this.onTree,
+    required this.onMissions,
+    required this.onFreeCook,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.white24,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 4),
-          Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-        ],
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _QuickButton(icon: Icons.menu_book_rounded, tooltip: 'Recetario', onTap: onRecipes),
+        const SizedBox(height: 10),
+        _QuickButton(icon: Icons.account_tree_rounded, tooltip: 'Árbol', onTap: onTree),
+        const SizedBox(height: 10),
+        _QuickButton(icon: Icons.flag_rounded, tooltip: 'Misiones', onTap: onMissions),
+        const SizedBox(height: 10),
+        _QuickButton(icon: Icons.spa_rounded, tooltip: 'Free Cook', onTap: onFreeCook),
+      ],
+    );
+  }
+}
+
+class _QuickButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+  const _QuickButton({required this.icon, required this.tooltip, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 48,
+          height: 48,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: AppColors.heroGradient),
+            shape: BoxShape.circle,
+            boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 8, offset: Offset(0, 3))],
+          ),
+          child: Icon(icon, color: Colors.white, size: 22),
+        ),
       ),
     );
   }

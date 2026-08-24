@@ -65,12 +65,36 @@ class GameState extends ChangeNotifier {
   Rarity? lastMergeRarity;
 
   static List<Achievement> _buildAchievements() => [
-        Achievement(id: 'a_primer_plato', name: 'Primer Plato', description: 'Prepara tu primera receta', emoji: '🍽️'),
-        Achievement(id: 'a_maestro_pizza', name: 'Maestro de la Pizza', description: 'Prepara 10 pizzas', emoji: '🍕'),
-        Achievement(id: 'a_chef_experimental', name: 'Chef Experimental', description: 'Descubre una receta secreta', emoji: '🧪'),
-        Achievement(id: 'a_coleccionista', name: 'Coleccionista Gastronómico', description: 'Descubre 15 ingredientes', emoji: '📖'),
-        Achievement(id: 'a_restaurante_famoso', name: 'Restaurante Famoso', description: 'Restaura todo el restaurante', emoji: '🏆'),
-        Achievement(id: 'a_maestro_culinario', name: 'Maestro Culinario', description: 'Descubre todas las recetas secretas', emoji: '👨‍🍳'),
+        Achievement(
+            id: 'a_primer_plato',
+            name: 'Primer Plato',
+            description: 'Prepara tu primera receta',
+            emoji: '🍽️'),
+        Achievement(
+            id: 'a_maestro_pizza',
+            name: 'Maestro de la Pizza',
+            description: 'Prepara 10 pizzas',
+            emoji: '🍕'),
+        Achievement(
+            id: 'a_chef_experimental',
+            name: 'Chef Experimental',
+            description: 'Descubre una receta secreta',
+            emoji: '🧪'),
+        Achievement(
+            id: 'a_coleccionista',
+            name: 'Coleccionista Gastronómico',
+            description: 'Descubre 15 ingredientes',
+            emoji: '📖'),
+        Achievement(
+            id: 'a_restaurante_famoso',
+            name: 'Restaurante Famoso',
+            description: 'Restaura todo el restaurante',
+            emoji: '🏆'),
+        Achievement(
+            id: 'a_maestro_culinario',
+            name: 'Maestro Culinario',
+            description: 'Descubre todas las recetas secretas',
+            emoji: '👨‍🍳'),
       ];
 
   Future<void> init() async {
@@ -81,8 +105,11 @@ class GameState extends ChangeNotifier {
       _generateOrder();
       _generateOrder();
     }
+    isReady = true;
     notifyListeners();
   }
+
+  bool isReady = false;
 
   // ---------------------------------------------------------------------
   // TABLERO / MERGE
@@ -129,7 +156,8 @@ class GameState extends ChangeNotifier {
         lastMergeRarity = result.resultIngredient?.rarity;
         _incrementMissionProgress(MissionType.mergeCount, amount: 1);
         if (result.isNewDiscovery) {
-          _registerIngredientDiscovery(result.resultIngredient!.id, showPopup: true);
+          _registerIngredientDiscovery(result.resultIngredient!.id,
+              showPopup: true);
         }
         _save();
         notifyListeners();
@@ -159,7 +187,8 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _registerIngredientDiscovery(String ingredientId, {bool showPopup = false}) {
+  void _registerIngredientDiscovery(String ingredientId,
+      {bool showPopup = false}) {
     final isNew = discoveryEngine.discoverIngredient(ingredientId);
     if (isNew) {
       final ingredient = IngredientsData.byId[ingredientId]!;
@@ -240,7 +269,8 @@ class GameState extends ChangeNotifier {
     final isNewRecipe = discoveryEngine.discoverRecipe(recipe.id);
     if (isNewRecipe) {
       audio.playDiscovery();
-      _showPopup('¡Receta descubierta!', '${recipe.name} · +${recipe.xpReward} XP');
+      _showPopup(
+          '¡Receta descubierta!', '${recipe.name} · +${recipe.xpReward} XP');
       if (recipe.isSecret) {
         _unlockAchievement('a_chef_experimental');
       }
@@ -248,8 +278,10 @@ class GameState extends ChangeNotifier {
     if (recipe.id == 'r_pizza_clasica' || recipe.timesPrepared == 1) {
       _unlockAchievement('a_primer_plato');
     }
-    _incrementMissionProgress(MissionType.discoverRecipes, amount: isNewRecipe ? 1 : 0);
-    _incrementMissionProgress(MissionType.prepareRecipe, targetId: recipe.id, amount: 1);
+    _incrementMissionProgress(MissionType.discoverRecipes,
+        amount: isNewRecipe ? 1 : 0);
+    _incrementMissionProgress(MissionType.prepareRecipe,
+        targetId: recipe.id, amount: 1);
 
     _checkOrdersForRecipe(recipe.id);
     _save();
@@ -269,11 +301,13 @@ class GameState extends ChangeNotifier {
 
   void _generateOrder() {
     if (activeOrders.length >= 3) return;
-    final visibleRecipes = recipeEngine.visibleInBook(discovery.discoveredRecipeIds);
+    final visibleRecipes =
+        recipeEngine.visibleInBook(discovery.discoveredRecipeIds);
     final pool = visibleRecipes.where((r) => !r.isLegendary).toList();
     if (pool.isEmpty) return;
     final recipe = pool[DateTime.now().millisecond % pool.length];
-    final customer = CustomersData.all[DateTime.now().second % CustomersData.all.length];
+    final customer =
+        CustomersData.all[DateTime.now().second % CustomersData.all.length];
     activeOrders.add(Order(
       id: _uuid.v4(),
       customerId: customer.id,
@@ -289,7 +323,12 @@ class GameState extends ChangeNotifier {
   /// bloqueos artificiales; una versión futura puede exigir stock exacto).
   bool deliverOrder(String orderId) {
     final order = activeOrders.firstWhere((o) => o.id == orderId,
-        orElse: () => Order(id: '', customerId: '', recipeIds: [], rewardCoins: 0, rewardXp: 0));
+        orElse: () => Order(
+            id: '',
+            customerId: '',
+            recipeIds: [],
+            rewardCoins: 0,
+            rewardXp: 0));
     if (order.id.isEmpty || order.delivered) return false;
     final recipe = recipeEngine.byId(order.recipeIds.first);
     if (recipe == null || recipe.timesPrepared <= 0) return false;
@@ -357,12 +396,14 @@ class GameState extends ChangeNotifier {
   // MISIONES / LOGROS
   // ---------------------------------------------------------------------
 
-  void _incrementMissionProgress(MissionType type, {String? targetId, int amount = 1}) {
+  void _incrementMissionProgress(MissionType type,
+      {String? targetId, int amount = 1}) {
     if (amount <= 0) return;
     for (final mission in missions) {
       if (mission.type != type || mission.claimed) continue;
       if (mission.targetId != null && mission.targetId != targetId) continue;
-      mission.progress = (mission.progress + amount).clamp(0, mission.targetCount);
+      mission.progress =
+          (mission.progress + amount).clamp(0, mission.targetCount);
     }
   }
 
@@ -438,7 +479,9 @@ class GameState extends ChangeNotifier {
       final boardJson = data['board'] as List?;
       if (boardJson != null) {
         board = boardJson
-            .map((e) => e == null ? null : MergeItem.fromJson(e as Map<String, dynamic>))
+            .map((e) => e == null
+                ? null
+                : MergeItem.fromJson(e as Map<String, dynamic>))
             .toList();
       }
 
@@ -461,7 +504,8 @@ class GameState extends ChangeNotifier {
       }
 
       if (data['discovery'] != null) {
-        discovery = Discovery.fromJson(data['discovery'] as Map<String, dynamic>);
+        discovery =
+            Discovery.fromJson(data['discovery'] as Map<String, dynamic>);
         discoveryEngine = DiscoveryEngine(discovery);
       }
 
@@ -503,7 +547,9 @@ class GameState extends ChangeNotifier {
 
       final ordersJson = data['orders'] as List?;
       if (ordersJson != null) {
-        activeOrders = ordersJson.map((o) => Order.fromJson(o as Map<String, dynamic>)).toList();
+        activeOrders = ordersJson
+            .map((o) => Order.fromJson(o as Map<String, dynamic>))
+            .toList();
       }
     } catch (_) {
       // Guardado corrupto: continuar con una partida nueva en lugar de
