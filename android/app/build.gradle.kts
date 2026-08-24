@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.varanova.hostal"
+    namespace = "com.culinary.fusion"
     compileSdk = 35
     ndkVersion = "27.0.12077973"
 
@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.varanova.hostal"
+        applicationId = "com.culinary.fusion"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

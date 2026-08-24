@@ -19,7 +19,7 @@
     <uses-permission android:name="android.permission.CAMERA"/>
 
     <application
-        android:label="VaraNovahostal"
+        android:label="culinaryfusion"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
         android:usesCleartextTraffic="true">
